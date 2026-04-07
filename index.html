@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinema Matriz</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #000;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    overflow-x: hidden;
+}
+
+/* 🕸️ EFEITO DE TEIA */
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05) 1px, transparent 1px),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: -1;
+}
+
+/* CONTAINER */
+.container {
+    max-width: 500px;
+    margin: auto;
+    background: #0a0a0a;
+    padding: 20px;
+    border-radius: 20px;
+}
+
+/* TÍTULO */
+h2 {
+    font-size: 18px;
+}
+
+/* 🎬 TELA ANIMADA */
+.tela {
+    background: #111;
+    padding: 10px;
+    margin: 20px 0;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* brilho passando */
+.tela::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: brilho 3s infinite;
+}
+
+@keyframes brilho {
+    0% { left: -100%; }
+    100% { left: 150%; }
+}
+
+/* MATRIZ RESPONSIVA */
+.matriz {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+/* ASSENTOS */
+.assento {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background: #222;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.assento:hover {
+    transform: scale(1.05);
+}
+
+.assento.selecionado {
+    background: #2ecc71;
+    color: #000;
+}
+
+.assento.ocupado {
+    background: #e74c3c;
+    cursor: not-allowed;
+}
+
+/* BOTÕES */
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.btn-reservar {
+    background: #3498db;
+    color: white;
+}
+
+.btn-limpar {
+    background: #444;
+    color: #aaa;
+}
+
+/* MOBILE AJUSTES */
+@media (max-width: 400px) {
+    .container {
+        padding: 15px;
+    }
+
+    h2 {
+        font-size: 16px;
+    }
+
+    .assento {
+        font-size: 10px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>🎬 Homem-Aranha: Novo Universo (2026)</h2>
+
+    <p>🕒 20:30 • Sala 1</p>
+
+    <div class="tela">TELA</div>
+
+    <div class="matriz" id="matriz"></div>
+
+    <p id="resumo">Nenhum assento selecionado</p>
+    <p id="total">Total: R$ 0</p>
+
+    <button class="btn-reservar" onclick="reservar()">Reservar</button>
+    <button class="btn-limpar" onclick="limpar()">Limpar</button>
+</div>
+
+<script>
+const PRECO = 20;
+
+let assentos = [
+    ["livre","ocupado","livre","livre"],
+    ["livre","livre","livre","livre"],
+    ["livre","livre","livre","ocupado"]
+];
+
+function render() {
+    const matriz = document.getElementById("matriz");
+    matriz.innerHTML = "";
+
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 4; j++) {
+            const div = document.createElement("div");
+            div.className = "assento";
+
+            const status = assentos[i][j];
+
+            if (status === "ocupado") div.classList.add("ocupado");
+            if (status === "selecionado") div.classList.add("selecionado");
+
+            const letra = String.fromCharCode(65 + i);
+
+            div.innerHTML = `<strong>${letra}${j+1}</strong><small>R$ ${PRECO}</small>`;
+
+            div.onclick = () => {
+                if (status === "ocupado") return;
+
+                assentos[i][j] =
+                    status === "selecionado" ? "livre" : "selecionado";
+
+                render();
+                atualizar();
+            };
+
+            matriz.appendChild(div);
+        }
+    }
+}
+
+function atualizar() {
+    let selecionados = [];
+    let total = 0;
+
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 4; j++) {
+            if (assentos[i][j] === "selecionado") {
+                const letra = String.fromCharCode(65 + i);
+                selecionados.push(`${letra}${j+1}`);
+                total += PRECO;
+            }
+        }
+    }
+
+    document.getElementById("resumo").innerText =
+        selecionados.length === 0
+        ? "Nenhum assento selecionado"
+        : "Selecionados: " + selecionados.join(", ");
+
+    document.getElementById("total").innerText =
+        "Total: R$ " + total;
+}
+
+function reservar() {
+    let tem = false;
+
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 4; j++) {
+            if (assentos[i][j] === "selecionado") {
+                assentos[i][j] = "ocupado";
+                tem = true;
+            }
+        }
+    }
+
+    alert(tem ? "Reserva confirmada!" : "Selecione um assento!");
+
+    render();
+    atualizar();
+}
+
+function limpar() {
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 4; j++) {
+            if (assentos[i][j] === "selecionado") {
+                assentos[i][j] = "livre";
+            }
+        }
+    }
+
+    render();
+    atualizar();
+}
+
+render();
+atualizar();
+</script>
+
+</body>
+</html>
